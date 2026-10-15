@@ -89,21 +89,22 @@ class SearchHit:
 
     @classmethod
     def from_row(cls, row: dict, term: str | None = None) -> "SearchHit | None":
-        cid = _pick(row, "callDataId", "call_data_id", "callId", "call_id", "id", "_id")
+        src = row.get("_source") if isinstance(row.get("_source"), dict) else row
+        cid = _pick(src, "callDataId", "call_data_id", "callId", "call_id", "id", "_id", default=row.get("_id"))
         if cid is None:
             return None
-        call_date = _pick(row, "recordingCallDate", "recording_call_date", "callDate", "call_date", "createdAt", "date")
+        call_date = _pick(src, "recordingCallDate", "recording_call_date", "callDate", "call_date", "createdAt", "date", "lead_created_on")
         hit = cls(
             call_id=str(cid),
             call_date=str(call_date)[:19] if call_date else None,
-            agent_id=_str(_pick(row, "agentId", "agent_id", "employeeId", "empId", "agentCode")),
-            agent_name=_str(_pick(row, "agentName", "agent_name", "employeeName", "agent")),
-            team=_str(_pick(row, "team", "teamName", "team_name", "sub_bu", "subBu")),
-            manager=_str(_pick(row, "manager", "managerName", "team_lead", "teamLead", "assistant_manager")),
-            city=_str(_pick(row, "city", "customerCity", "customer_city")),
-            state=_str(_pick(row, "state", "customerState", "customer_state")),
-            talktime=_num(_pick(row, "talktime", "talkTime", "talk_time", "duration")),
-            lead_id=_str(_pick(row, "leadId", "lead_id", "LeadID")),
+            agent_id=_str(_pick(src, "agentId", "agent_id", "employeeId", "employee_id", "empId", "agentCode")),
+            agent_name=_str(_pick(src, "agentName", "agent_name", "employeeName", "agent")),
+            team=_str(_pick(src, "team", "teamName", "team_name", "sub_bu", "subBu")),
+            manager=_str(_pick(src, "manager", "managerName", "team_lead", "teamLead", "assistant_manager")),
+            city=_str(_pick(src, "lead_city_name", "city", "customerCity", "customer_city")),
+            state=_str(_pick(src, "lead_state_name", "state", "customerState", "customer_state")),
+            talktime=_num(_pick(src, "talktime", "talkTime", "talk_time", "duration")),
+            lead_id=_str(_pick(src, "leadId", "lead_id", "LeadID")),
             raw=row,
         )
         if term:
@@ -128,7 +129,19 @@ def extract_rows(payload: Any) -> list[dict]:
         return [r for r in payload if isinstance(r, dict)]
     if not isinstance(payload, dict):
         return []
-    for key in ("data", "result", "results", "rows", "hits", "calls", "records", "items", "docs"):
+    
+    # Direct Policybazaar ElasticSearch path:
+    res = payload.get("result")
+    if isinstance(res, dict):
+        elastic = res.get("elastic_data")
+        if isinstance(elastic, dict):
+            hits = elastic.get("hits")
+            if isinstance(hits, dict):
+                inner_hits = hits.get("hits")
+                if isinstance(inner_hits, list):
+                    return [r for r in inner_hits if isinstance(r, dict)]
+    
+    for key in ("elastic_data", "data", "result", "results", "rows", "hits", "calls", "records", "items", "docs"):
         v = payload.get(key)
         if isinstance(v, list):
             return [r for r in v if isinstance(r, dict)]
@@ -143,13 +156,36 @@ def extract_total(payload: Any) -> int | None:
     """Find a 'total hits' counter inside an arbitrary search response."""
     if not isinstance(payload, dict):
         return None
+    res = payload.get("result")
+    if isinstance(res, dict):
+        elastic = res.get("elastic_data")
+        if isinstance(elastic, dict):
+            hits = elastic.get("hits")
+            if isinstance(hits, dict) and "total" in hits:
+                tot = hits["total"]
+                if isinstance(tot, dict):
+                    return tot.get("value")
+                if isinstance(tot, (int, float)):
+                    return int(tot)
+        aggs = res.get("search_aggrigations")
+        if isinstance(aggs, dict):
+            hits = aggs.get("hits")
+            if isinstance(hits, dict) and "total" in hits:
+                tot = hits["total"]
+                if isinstance(tot, (int, float)):
+                    return int(tot)
+        if "total_call_count" in res:
+            tot = res["total_call_count"]
+            if isinstance(tot, (int, float)):
+                return int(tot)
+                
     for key in ("total", "totalCount", "total_count", "count", "totalRecords", "totalHits", "total_hits", "totalCalls"):
         v = payload.get(key)
         if isinstance(v, dict):  # elastic style {"value": n}
             v = v.get("value")
         if isinstance(v, (int, float)) and not isinstance(v, bool):
             return int(v)
-    for key in ("data", "result", "hits", "meta", "pagination"):
+    for key in ("data", "result", "elastic_data", "hits", "meta", "pagination"):
         v = payload.get(key)
         if isinstance(v, dict):
             t = extract_total(v)
