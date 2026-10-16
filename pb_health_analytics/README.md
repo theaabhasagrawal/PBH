@@ -1,12 +1,64 @@
 # PB Health Hospital – Pitch Analytics Pipeline
 
-This project measures how well telesales agents pitch **PB Health Hospital** on health-insurance sales calls. It has three parts:
+This project measures how well telesales agents pitch **PB Health Hospital** on health-insurance sales calls. It has four parts:
 
 | # | Deliverable | Entry point |
 |---|-------------|-------------|
 | 1 | One-time **historical baseline diagnostic**: pulls calls, classifies pitch and objections, prints an executive summary and stores everything in SQLite | `python analyzer.py --days 21` |
 | 2 | **2-page sales reference deck / battlecard** (print-ready HTML + PDF) | `python deck_generator.py` → `output/PB_Health_Sales_Deck.{html,pdf}` |
 | 3 | **Interactive daily dashboard**, with a 1-click T-1 ingest and a cron script | `streamlit run app.py` / `python daily_ingest.py` |
+| 4 | **Call analysis workbook**: plain counts, customer doubts with verbatim quotes, raw call-by-call data (no scores) | `python export_call_analysis.py` → `output/PB_Health_Call_Analysis.xlsx` |
+
+---
+
+## Call analysis workbook (`export_call_analysis.py`)
+
+Run it on the PB office network / VPN (the portal host does not resolve anywhere else):
+
+```bash
+python export_call_analysis.py                    # last 21 days up to today
+python export_call_analysis.py --from 2026-09-25 --to 2026-10-16
+python export_call_analysis.py --max-calls 300    # quick run on the 300 most recent calls
+python export_call_analysis.py --cached           # rebuild from transcripts already downloaded, no API
+python export_call_analysis.py --from-db          # rebuild from data/pb_health.db (demo rows excluded)
+```
+
+**What it pulls:** every phrase below, plus every call tagged category `10693`:
+
+* Brand: pb health, pb hospital, policybazaar hospital, pb health hospital
+* Hinglish: khud ka / apna / humara hospital
+* Hubs: iffco chowk, sector 62, golf course, faridabad, sector 2, noida sector 50, sector 50, rohini
+
+Transcripts are cached in `data/transcripts/`, so a re-run only fetches new calls. It also queries the daily count of all qualified NCR health sales calls, as a second denominator for the pitch rate.
+
+**How a call is read (`call_facts.py`):**
+
+1. **Harmonize.** Each line is labelled AGENT or CUSTOMER. Devanagari and Hinglish spellings are normalized, and pitch phrases become standard tags:
+   * *khud ke hospital*, *hamare apne hospital*, *P B Health* and *policy bazar ka hospital* all become `<pb_hospital>`
+   * hub names become `<hub:iffco_chowk>`, `<hub:sector_62>`, `<hub:faridabad_sec2>`, `<hub:noida_sec50>` and `<hub:rohini>`
+
+   Exclusions:
+   * *aap apna hospital choose kar sakte hain* (your choice of hospital) is not tagged.
+   * *Noida sector 62* counts as Noida, not the Golf Course hub.
+   * *IFFCO Tokio* (the insurer) is not tagged as the IFFCO Chowk hub.
+2. **Hospital window.** Hubs, story elements and doubts only count in the stretch of the call where PB Hospital is being discussed. That stretch runs from 1 line before each mention to 6 lines after, extended while the talk stays on the hospital. This keeps policy talk (cashless claims, a 2-year premium discount, the Policybazaar policy app) out of the numbers.
+3. **Facts per call:**
+   * Pitched (Y/N), from AGENT lines only
+   * Hubs named, or *Gurgaon (generic)* when no specific hub is named
+   * Story elements: multispeciality, or wrongly calling it a *clinic / OPD pass*
+   * Ethical / no overcharge, zero waiting / digital, app download, family discount, cashless
+   * Customer doubts in 6 buckets, from CUSTOMER lines only, each with the verbatim customer line and the agent's next reply
+
+**Workbook tabs:**
+
+| Tab | Contents |
+|-----|----------|
+| Executive Summary | Calls scanned and analyzed, pitch rate, top 3 pitch gaps, hub mention counts and %, doubt counts and % |
+| Customer Doubts & Objections | One row per doubt bucket, sorted by frequency: real customer quotes, call count, % of pitched calls, real agent answers, and the counter-script from the sales deck |
+| Pitch Elements Tracker | Count and % of pitched calls for each story element and hub, with one verbatim agent example each |
+| Call-by-Call Master Data | One row per call with every fact and quote. Filter this tab to audit any number in the other three. |
+
+`output/PB_Health_Harmonized_Dialogue.csv` lists every analysed line: verbatim, harmonized, speaker, and whether it fell in the hospital window. The workbook and CSV hold customer speech, so both are git-ignored.
 
 ---
 
@@ -150,6 +202,8 @@ pb_health_analytics/
 ├── config.py          # API URLs, env-based credentials, keyword clusters, hubs, weights, taxonomy
 ├── api_client.py      # session/login, rate limit, retry/backoff, 504 window splitting, pagination, transcripts, --probe
 ├── classifier.py      # turn-by-turn pillar + objection + region classifier with snippets
+├── call_facts.py      # transcript harmonization (AGENT/CUSTOMER, Hinglish -> tags) + per-call facts and quotes
+├── export_call_analysis.py  # search -> transcripts -> facts -> PB_Health_Call_Analysis.xlsx
 ├── metrics.py         # PPR, Story Adherence, Location Share, nearest-hub gap, objections, trends, leaderboard
 ├── db.py              # SQLite schema + readers/writers
 ├── analyzer.py        # baseline diagnostic CLI + reusable ingest_range()
