@@ -87,12 +87,20 @@ python deck_generator.py                  # HTML + PDF
 python deck_generator.py --with-baseline  # adds a "where we are today" KPI strip from the DB
 ```
 
-* **Page 1 – Master Pitch Script:** 20-second hook (Hinglish + English), the 5 PB Story pillars with ready-to-say lines, the 5 NCR hubs with "pitch to" areas, family perks, close and app push, and the scoring rubric.
-* **Page 2 – Objection Battlecards:** word-for-word counters to 7 objections (Max/Fortis comparison, distance, existing-policy cashless, clinic vs hospital, discount redemption, app activation, "insurer's own hospital"). Also a 3-step recovery, the hub address finder table, and Do / Don't lists.
+* **Page 1 – Master Pitch Script:**
+  * the 30-second pitch (Hinglish + English, the same script as `pitch_card.py`)
+  * the 5 pillars with ready-to-say lines
+  * where the hospital is (only MG Road, Gurugram is open; Noida and Delhi are next, with no dates)
+  * what PB customers get, when to pitch, the close, and how pitches are tracked
+* **Page 2 – Objection Battlecards:**
+  * word-for-word answers to the questions customers actually ask, most asked first: where is it, hospital or clinic, discount, doctors, cashless, not interested, and "insurer's own hospital"
+  * a 3-step recovery
+  * the approved-facts table
+  * Do / Don't lists
 
-All copy lives in the `DECK` dict at the top of `deck_generator.py`. Each PDF page auto-fits its font size to fill exactly one A4 page, and the HTML also prints to exactly 2 pages.
+All copy lives in the `DECK` and `FACTS` dicts at the top of `deck_generator.py`. Each PDF page auto-fits its font size to fill exactly one A4 page, and the HTML also prints to exactly 2 pages.
 
-> **Check with PB Health ops before printing:** (1) the exact discount redemption steps in objection #5, and (2) the list of insurers with cashless tie-ups (objection #3 tells agents to confirm live). The deck deliberately gives no discount percentages or prices.
+> **Facts:** approved by PB Health strategy (21 Oct 2026), including "100% claim guarantee" and "India's only insurance company with its own hospital". Keep `deck_generator.py`, `pitch_card.py` and `advisor_playbook.js` in step when a fact changes. Agents are told to confirm cashless status for the customer's insurer live.
 
 ## 6. Dashboard
 
