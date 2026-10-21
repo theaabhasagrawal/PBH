@@ -140,7 +140,7 @@ const ASKS = [
   ["“mujhe nahi chahiye … hospital mein mere ko nahi jaana hai” (call 3975641784)", String(S.doubts["Skepticism/Rushing past"]),
    "Bilkul sir. Bas yaad rakhiye: hospital, doctor aur claim advisor, teeno PB ke. Location WhatsApp kar deta hoon. Then move on - don't repeat the pitch."],
   ["“meri policy wahan cashless chalegi?” (not heard yet - be ready)", "0",
-   "Cashless process Policybazaar ke saath integrated hai. Apni policy ka naam bataiye, main abhi confirm karta hoon."],
+   "Apni policy ka naam bataiye, main abhi check karke batata hoon ki wahan cashless milega ya nahi."],
 ];
 
 const DO = [

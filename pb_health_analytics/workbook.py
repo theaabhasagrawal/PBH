@@ -198,15 +198,21 @@ def _pick_examples(items: list[tuple[str, str, str, str]], k: int) -> list[tuple
     return sorted(items, key=lambda x: hashlib.md5(x[0].encode()).hexdigest())[:k]
 
 
-COUNTER_SCRIPTS = {  # deck_generator.DECK['objections'] index + ops caveat
-    "scope": (3, ""),
-    "trust": (0, ""),
-    "location": (1, "CONFIRM WITH OPS FIRST: on these calls agents say only the MG Road, Gurgaon hospital is open and "
-                    "the rest are 'coming soon'. Only name hubs that are open today."),
-    "cashless": (2, "CONFIRM WITH OPS: the list of insurers with cashless tie-ups."),
-    "discount": (4, "CONFIRM WITH OPS: exact redemption steps. Agents quote 50%-75% off on calls - one approved number is needed."),
-    "skeptic": (6, "Say it once in one line and move on; don't repeat the pitch after a 'no'."),
+COUNTER_SCRIPTS = {  # deck_generator.DECK['objections'] title + coaching caveat (looked up by title, not position)
+    "scope": ("Hospital hai ya clinic?", ""),
+    "trust": ("Doctors kaun hain?", ""),
+    "location": ("Kahan hai? Bahut door hai.", "Only MG Road, Gurugram is open (confirmed 21 Oct 2026). Never give dates for new hospitals."),
+    "cashless": ("Meri policy chalegi?", "Never confirm cashless for an insurer without checking it live."),
+    "discount": ("Discount kitna milega?", "Use only 50% (consultations) and 20% (tests and scans) - approved 21 Oct 2026."),
+    "skeptic": ("Zarurat nahi, aage chalo", "Say it once in one line and move on; don't repeat the pitch after a 'no'."),
 }
+
+
+def _objection(title: str) -> tuple[str, str, str, str]:
+    for o in DECK["objections"]:
+        if o[0] == title:
+            return o
+    raise KeyError(f"deck_generator.DECK['objections'] has no card titled {title!r}")
 
 
 def build(conn: sqlite3.Connection, start: date, end: date, out: Path) -> int:
@@ -344,8 +350,8 @@ def _write_doubts(ws, k: Counter, df: pd.DataFrame, facts: dict[str, cf.CallFact
     for i, r in enumerate(rows, start=2):
         quotes = _pick_examples(r["items"], 4)
         answers = _pick_examples([x for x in r["items"] if len(x[2].split()) >= 8], 2)
-        idx, caveat = COUNTER_SCRIPTS[r["key"]]
-        title, cust_says, you_say, tip = DECK["objections"][idx]
+        card_title, caveat = COUNTER_SCRIPTS[r["key"]]
+        title, cust_says, you_say, tip = _objection(card_title)
         script = you_say.replace("\\\"", "\"").strip('"') + f"\n\nCoaching note: {tip}" + (f"\n\n{caveat}" if caveat else "")
         r["row"] = i
         values = [

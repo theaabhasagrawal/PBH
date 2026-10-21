@@ -100,7 +100,7 @@ DECK = {
          "Same senior expertise + no billing incentive."),
         ("Meri policy chalegi?",
          "\"Meri policy wahan cashless chalegi?\"",
-         "\"Cashless process Policybazaar ke saath integrated hai. Apni policy ka naam bataiye, main abhi confirm karta hoon.\"",
+         "\"Apni policy ka naam bataiye, main abhi check karke batata hoon ki wahan cashless milega ya nahi.\"",
          "Never guess - confirm the insurer live."),
         ("Zarurat nahi, aage chalo",
          "\"Mujhe nahi chahiye, hospital mein mujhe nahi jaana.\"",
@@ -108,8 +108,8 @@ DECK = {
          "Say it once, then move on."),
         ("Insurance company ka hospital - wahin bhejoge?",
          "\"Aap apne hi hospital mein bhejna chahte ho na?\"",
-         "\"Bilkul nahi sir - aapki policy saare network hospitals mein valid hai, choice aapki hai. PB Health Hospital ek extra "
-         "option hai jahan doctors salaried hain aur PB customer ko 50% / 20% off milta hai.\"",
+         "\"Bilkul nahi sir - hospital ki choice hamesha aapki hai. PB Health Hospital ek extra option hai jahan doctors "
+         "salaried hain aur PB customer ko 50% / 20% off milta hai.\"",
          "Position as a choice, never a restriction."),
     ],
     "dos": [
@@ -149,19 +149,13 @@ BRAND = {"navy": "#0B2A4A", "teal": "#00A3A1", "orange": "#F26B21", "light": "#E
 # Baseline strip (optional)
 # --------------------------------------------------------------------------- #
 def baseline_strip() -> str | None:
+    """'Where we are today' line from the real-call analysis (output/sales_kit/stats.json)."""
     try:
-        import db
-        import metrics
-        df = db.load_calls()
-        if df.empty:
-            return None
-        den = metrics.denominator_for(df, db.load_denominators())
-        k = metrics.kpi_summary(df, den)
-        ls = metrics.location_share(df).set_index("hub")["share_pct"]
-        demo = " (DEMO DATA)" if (df["source"] == "demo").any() else ""
-        return (f"Where we are today{demo}: PPR {k['ppr_pct']}% | Story score {k['story_adherence']}/100 | "
-                f"App push {k['app_push_pct']}% | Hub share - Gurgaon {ls['IFFCO Chowk'] + ls['Sector 62']:.0f}%, "
-                f"Noida {ls['Noida']:.0f}%, Faridabad {ls['Faridabad']:.0f}%, Rohini {ls['Rohini']:.0f}%")
+        import json
+        st = json.loads((config.OUTPUT_DIR / "sales_kit" / "stats.json").read_text())
+        return (f"Where we are today ({st['period']}): {st['team_actual']:.0f}% of Gurgaon calls mention the hospital | "
+                f"{st['scope_missing']:.0f}% of pitches never say what it treats | {st['ethical']:.0f}% mention salaried "
+                f"doctors | MG Road named in {st['mg_road']:.0f}% of pitches")
     except Exception:
         return None
 
