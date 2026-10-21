@@ -109,21 +109,23 @@ def choose_transcript(hindi: list[dict], english: list[dict]) -> list[dict]:
 # needs the hospital itself to be named as Policybazaar's.
 HOSP = r"hospitals?\b"
 OWN = r"(?:khud ka|apna|apne|apni|own)"
+# words agents slip in before "hospital": "khud ka BHI hospital", "khud ka APNA ON hospital" (ASR writes own as on)
+GAP = r"(?:(?:bhi|bhee|ek|apna|apne|naya|on|own|multispeciality)\s+){0,3}"
 # Strong phrasings are a pitch on their own.
 STRONG_TAGS: dict[str, re.Pattern] = {
     "PB Health Hospital / PB Hospital": re.compile(r"\bpb\s*(?:health\s*)?(?:ka\s*)?" + HOSP, F),
     "Policybazaar ka khud ka/apna hospital": re.compile(
-        r"\bpolicybazaar\s*(?:ka|ke|ki|kaa|ne)?\s*(?:sir\s*)?(?:ek\s*)?" + OWN + r"\s*(?:ek\s*)?(?:naya\s*)?(?:multispeciality\s*)?" + HOSP, F),
-    "khud ka hospital": re.compile(r"\bkhud ka\s*(?:ek\s*)?(?:naya\s*)?(?:multispeciality\s*)?" + HOSP, F),
+        r"\bpolicybazaar\s*(?:ka|ke|ki|kaa|ne)?\s*(?:sir\s*)?(?:bhi\s*|bhee\s*)?(?:ek\s*)?" + OWN + r"\s*" + GAP + HOSP, F),
+    "khud ka hospital": re.compile(r"\bkhud ka\s*" + GAP + HOSP, F),
 }
 # Weak phrasings are also how agents describe the *network* ("policybazaar ke
 # listed hospitals", "aap apna hospital mein ja sakte ho", "Apna Hospital" is even a
 # real hospital name in Ujjain), so they only count with an own-hospital signal
 # within 80 characters and no network wording right next to the match.
 WEAK_TAGS: dict[str, re.Pattern] = {
-    "Policybazaar hospital": re.compile(r"\bpolicybazaar\s*(?:ka|ke|ki|kaa)?\s*(?:ek\s*)?(?:naya\s*)?" + HOSP, F),
+    "Policybazaar hospital": re.compile(r"\bpolicybazaar\s*(?:ka|ke|ki|kaa)?\s*(?:bhi\s*|bhee\s*)?(?:ek\s*)?(?:naya\s*)?" + HOSP, F),
     "apna/hamara hospital": re.compile(
-        r"\b(?:apna|apne|apni|humara|hamara|humare|hamare|hamari|humari|our|our own)\s*(?:ek\s*)?(?:khud ka\s*)?(?:naya\s*)?(?:multispeciality\s*)?" + HOSP, F),
+        r"\b(?:apna|apne|apni|humara|hamara|humare|hamare|hamari|humari|our|our own)\s*(?:khud ka\s*)?" + GAP + HOSP, F),
     "PB Health ... hospital": re.compile(
         r"\bpb health\b(?:(?!\bapp\b|wellness|membership|platinum|plus|card|claim).){0,50}?\b" + HOSP
         + r"|\b" + HOSP + r"(?:(?!\bapp\b|wellness|membership|platinum|plus|card|claim).){0,50}?\bpb health\b", F),

@@ -51,3 +51,10 @@ def test_not_far_is_not_location_friction():
 def test_waiting_period_is_not_a_zero_wait_pitch():
     f = analyse_call("4", turns(("agent", "humara khud ka hospital hai aur policy mein waiting period do saal ka hai")), [])
     assert f.pitched and not f.elements["zero_wait"]
+
+
+def test_bhi_and_on_fillers_still_count_as_a_pitch():
+    for line in ["policy bazaar ka khud ka bhi hospital khul gaya hai",
+                 "policy bazaar ne apna bhi hospital open kiya abhi gurgaon mein",
+                 "policybazaar ne khud ka apna on hospital bhi open kiya"]:
+        assert pitch_tags(normalise(line)), line

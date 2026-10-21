@@ -148,7 +148,28 @@ Writes `output/PB_Health_Call_Analysis.xlsx` (git-ignored, because it holds verb
 
   Every figure on the first three tabs is a `COUNTIFS` over the master tab, so you can filter the master tab to see the calls behind any number. Counter-scripts are taken from `deck_generator.DECK`.
 
-## 9. Offline demo mode
+## 9. Sales kit: pitch card, advisor playbook, tracking keywords
+
+```bash
+python keyword_rules.py            # PB_Health_Pitch_Keywords.xlsx: new tracker keywords + accuracy vs the current list
+python pitch_card.py               # PB_Health_Advisor_Pitch_Card.pdf / .pptx (A4 landscape, PB Health brand)
+node advisor_playbook.js           # PB_Health_Advisor_Playbook.docx (needs `npm install docx@9`)
+```
+
+All three write to `output/sales_kit/` and read their numbers from `output/sales_kit/stats.json`.
+
+* **Keywords** (`keyword_rules.py`). The sales team's tool marks a call "Pitched" when every word in any one row appears in the call.
+  * The current list (`discount`, `claims`, `facility`, ...) flags 65% of Gurgaon calls, but only 42% actually mention the hospital.
+  * `PHRASE_ROWS` is the recommended replacement: 93% right when it says "Pitched", and it catches 96% of real pitches. It needs exact-phrase matching. If the tool can only match single words, use `WORD_ROWS` instead.
+  * The script tests every version against real transcripts (`data/call_export_cache.db`) and the team's labels (`data/team_pitch_labels.csv`, both git-ignored).
+  * The workbook is git-ignored because it contains agent names and call snippets.
+* **Pitch card** (`pitch_card.py`). One content block is rendered two ways: as HTML printed to PDF by headless Chrome, and as an editable PowerPoint built at the same geometry.
+  * It uses the official logo (`assets/pbh-logo.png`) and brand gradients, with Nunito and DM Sans fonts.
+  * PowerPoint shows a fallback font where Nunito and DM Sans aren't installed. The PDF embeds them.
+* **Playbook** (`advisor_playbook.js`). A rewrite of the team's advisor guide covering the 30-second script, five pillars with real call excerpts, real customer questions, tracking, a TL call check and approved facts.
+* **Facts.** Only MG Road, Gurugram is open. "100% claim guarantee" and "India's only insurance company with its own hospital" were approved by PB Health strategy on 21 Oct 2026. Update `pitch_card.py` and `advisor_playbook.js` together when any fact changes.
+
+## 10. Offline demo mode
 
 `demo_data.py` generates **synthetic** Hinglish calls, skewed toward Gurgaon with a weak app push, so the whole pipeline can be tested without portal access:
 
@@ -158,7 +179,7 @@ streamlit run app.py                   # banner warns that demo data is in view
 python analyzer.py --purge-demo        # remove all demo rows before the real baseline
 ```
 
-## 10. Tests
+## 11. Tests
 
 ```bash
 python -m pytest -q tests
@@ -182,6 +203,10 @@ pb_health_analytics/
 ├── call_analysis_export.py  # real-call fetch + Excel export CLI
 ├── call_facts.py      # per-call facts: Hinglish harmonisation, pitch / hub / USP / doubt detection
 ├── workbook.py        # PB_Health_Call_Analysis.xlsx builder (COUNTIFS over the master tab)
+├── keyword_rules.py   # tracker keyword rows (AND within a row, OR across rows) + accuracy workbook
+├── pitch_card.py      # one-page advisor pitch card (PDF + editable PPTX)
+├── advisor_playbook.js # advisor playbook (.docx, docx-js)
+├── assets/            # PB Health logo and brand gradient bars
 ├── demo_data.py       # synthetic calls for offline testing
 ├── tests/             # pytest suite
 ├── output/            # generated deck (committed); reports/probes (ignored)

@@ -1,0 +1,41 @@
+{
+ "period": "30 Sep - 20 Oct 2026",
+ "analysed": 9770,
+ "pitched": 3253,
+ "pitch_rate": 33.295803480040945,
+ "team_calls": 6378,
+ "team_actual": 41.75290059579805,
+ "team_tracker": 64.98902477265601,
+ "scope_missing": 77.77436212726714,
+ "multispeciality": 4.242237934214571,
+ "opd_only": 17.98339993851829,
+ "ethical": 3.1663080233630496,
+ "zero_wait": 2.1518598217030434,
+ "app": 2.3670458038733475,
+ "family_discount": 1.045189056255764,
+ "cashless": 22.625268982477714,
+ "mg_road": 46.879803258530586,
+ "iffco": 8.39225330464187,
+ "gurgaon_generic": 25.883799569628035,
+ "no_location": 20.565631724561943,
+ "noida": 10.72855825391946,
+ "outside_ncr": 32.70826928988626,
+ "any_doubt": 4.027051952044267,
+ "claims": {
+  "Quotes a % discount (e.g. '50% off consultation')": 28.773439901629267,
+  "Says 'free' consultation / treatment / revisit": 10.451890562557638,
+  "Says '100% claim guarantee'": 13.003381494005533,
+  "Calls it the 'first' hospital": 19.36673839532739,
+  "Says other cities/hubs are 'coming soon'": 23.854903166308024,
+  "Mentions doctors (top / senior / AIIMS / specialists)": 7.500768521364894
+ },
+ "doubts": {
+  "Scope doubt": 9,
+  "Doctor/Trust doubt": 5,
+  "Location friction": 110,
+  "Cashless/Insurance doubt": 0,
+  "Discount confusion": 7,
+  "Skepticism/Rushing past": 4
+ },
+ "pbh_only": 644
+}
