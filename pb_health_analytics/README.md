@@ -125,7 +125,30 @@ crontab (07:15 daily):
 
 On Windows, Task Scheduler can run the same command.
 
-## 8. Offline demo mode
+## 8. Real call analysis → Excel
+
+```bash
+python call_analysis_export.py                  # last 21 days: fetch (resumable) + analyse + write Excel
+python call_analysis_export.py --skip-fetch     # re-analyse the cached calls only (no portal calls)
+python call_analysis_export.py --from 2026-10-01 --to 2026-10-15
+```
+
+Writes `output/PB_Health_Call_Analysis.xlsx` (git-ignored, because it holds verbatim call quotes) and prints a summary in the terminal.
+
+* **Fetch.** One OR query per phrase cluster (brand, Hinglish "khud ka/apna/humara hospital", hub names) per day, with category `10693`, two at a time. Running each phrase as its own parallel query overloaded the portal. Hits and transcripts are cached in `data/call_export_cache.db`, so a re-run only pulls what is missing.
+* **Analyse** (`call_facts.py`). This step is separate from `classifier.py` and gives plain yes/no facts, not scores.
+  * "PB Health" on its own is **not** counted as a hospital pitch. On real calls it mostly means the PB Health app, wellness programme or membership.
+  * Hubs, story elements and doubts are only read in the turns right around a hospital mention.
+  * "MG Road, Gurgaon" is kept as its own location bucket, because that is how agents actually describe the open hospital.
+* **Workbook** (`workbook.py`) has 4 tabs:
+  * Executive Summary
+  * Customer Doubts & Objections
+  * Pitch Elements Tracker
+  * Call-by-Call Master Data
+
+  Every figure on the first three tabs is a `COUNTIFS` over the master tab, so you can filter the master tab to see the calls behind any number. Counter-scripts are taken from `deck_generator.DECK`.
+
+## 9. Offline demo mode
 
 `demo_data.py` generates **synthetic** Hinglish calls, skewed toward Gurgaon with a weak app push, so the whole pipeline can be tested without portal access:
 
@@ -135,7 +158,7 @@ streamlit run app.py                   # banner warns that demo data is in view
 python analyzer.py --purge-demo        # remove all demo rows before the real baseline
 ```
 
-## 9. Tests
+## 10. Tests
 
 ```bash
 python -m pytest -q tests
@@ -156,6 +179,9 @@ pb_health_analytics/
 ├── daily_ingest.py    # cron T-1 ingestion
 ├── deck_generator.py  # 2-page sales deck (HTML + ReportLab PDF)
 ├── app.py             # Streamlit dashboard
+├── call_analysis_export.py  # real-call fetch + Excel export CLI
+├── call_facts.py      # per-call facts: Hinglish harmonisation, pitch / hub / USP / doubt detection
+├── workbook.py        # PB_Health_Call_Analysis.xlsx builder (COUNTIFS over the master tab)
 ├── demo_data.py       # synthetic calls for offline testing
 ├── tests/             # pytest suite
 ├── output/            # generated deck (committed); reports/probes (ignored)
